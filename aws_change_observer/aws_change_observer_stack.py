@@ -53,6 +53,14 @@ class AwsChangeObserverStack(Stack):
             description="A layer containing the image module"
         )
 
+        # Define the Lambda Layer for detected_objects
+        coordinate_layer = aws_lambda.LayerVersion(
+            self, 'DetectedObjectsLayer',
+            code=aws_lambda.Code.from_asset("layers/detected_objects_layer"), 
+            compatible_runtimes=[aws_lambda.Runtime.PYTHON_3_8],
+            description="A layer containing the detected_objects module"
+        )
+
         # Lambda function
         get_markers_request_lambda = aws_lambda.Function(
             self, 'GetMarkersRequestFunction',
