@@ -29,36 +29,12 @@ class AwsChangeObserverStack(Stack):
             removal_policy=RemovalPolicy.DESTROY,  # Use RETAIN in production
         )
 
-        # Define the Lambda Layer for data_service
-        data_service_layer = aws_lambda.LayerVersion(
-            self, 'DataServiceLayer',
-            code=aws_lambda.Code.from_asset("layers/data_service_layer"),  # Path to the directory, NOT .zip
-            compatible_runtimes=[aws_lambda.Runtime.PYTHON_3_8, aws_lambda.Runtime.PYTHON_3_9],
-            description="A layer containing the data_service module"
-        )
-
-        # Define the Lambda Layer for coordinate
-        coordinate_layer = aws_lambda.LayerVersion(
-            self, 'CoordinateLayer',
-            code=aws_lambda.Code.from_asset("layers/coordinate_layer"), 
+        # Define the Lambda Layer for shared classes
+        shared_classes_layer = aws_lambda.LayerVersion(
+            self, 'SharedClassesLayer',
+            code=aws_lambda.Code.from_asset("layers/shared_classes_layer"), 
             compatible_runtimes=[aws_lambda.Runtime.PYTHON_3_8],
-            description="A layer containing the coordinate module"
-        )
-
-        # Define the Lambda Layer for image
-        coordinate_layer = aws_lambda.LayerVersion(
-            self, 'ImageLayer',
-            code=aws_lambda.Code.from_asset("layers/image_layer"), 
-            compatible_runtimes=[aws_lambda.Runtime.PYTHON_3_8],
-            description="A layer containing the image module"
-        )
-
-        # Define the Lambda Layer for detected_objects
-        coordinate_layer = aws_lambda.LayerVersion(
-            self, 'DetectedObjectsLayer',
-            code=aws_lambda.Code.from_asset("layers/detected_objects_layer"), 
-            compatible_runtimes=[aws_lambda.Runtime.PYTHON_3_8],
-            description="A layer containing the detected_objects module"
+            description="A layer containing the shared classes module"
         )
 
         # Lambda function
@@ -68,7 +44,7 @@ class AwsChangeObserverStack(Stack):
             runtime=aws_lambda.Runtime.PYTHON_3_8,
             handler="get_markers_request_lambda_function.lambda_handler",
             code=aws_lambda.Code.from_asset(GET_MARKERS_REQUEST_LAMBDA_CODE_PATH),
-            layers=[data_service_layer],
+            layers=[shared_classes_layer],
             environment={
                 'TABLE_NAME': table.table_name,
             },
