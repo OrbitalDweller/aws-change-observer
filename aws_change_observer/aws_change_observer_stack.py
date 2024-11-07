@@ -37,6 +37,14 @@ class AwsChangeObserverStack(Stack):
             description="A layer containing the data_service module"
         )
 
+        # Define the Lambda Layer for coordinate
+        coordinate_layer = aws_lambda.LayerVersion(
+            self, 'CoordinateLayer',
+            code=aws_lambda.Code.from_asset("layers/coordinate_layer"), 
+            compatible_runtimes=[aws_lambda.Runtime.PYTHON_3_8],
+            description="A layer containing the coordinate module"
+        )
+
         # Lambda function
         get_markers_request_lambda = aws_lambda.Function(
             self, 'GetMarkersRequestFunction',
