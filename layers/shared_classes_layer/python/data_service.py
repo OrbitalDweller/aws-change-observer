@@ -2,6 +2,7 @@ import boto3
 import logging
 from typing import List
 from location_marker import LocationMarker
+import uuid
 
 logger = logging.getLogger(__name__)
 
@@ -35,7 +36,7 @@ class DataService:
             logger.error(f"Error retrieving markers: {e}")
             raise
 
-    def add_marker(self, location_marker: LocationMarker, mark_id):
+    def add_marker(self, marker: LocationMarker):
         """
         Add a new marker to the DynamoDB table.
 
@@ -48,11 +49,12 @@ class DataService:
         :return: The response from DynamoDB.
         """
         try:
-            location_marker.set_marker_id(mark_id)
-            marker_data = location_marker.to_json()
-
-            response = self.table.put_item(Item=marker_data)
-            logger.info(f"Marker added: {location_marker.get_marker_id()} with status {location_marker.get_status()}")
+            #generate id
+            unique_id = str(uuid.uuid4())
+            marker.set_marker_id(unique_id)
+           
+            response = self.table.put_item(Item=marker.to_json())
+            logger.info(f"Marker added: {marker.get_marker_id()} with status {marker.get_status()}")
             return response  #response for debugging
         except Exception as e:
             logger.error(f"Error adding marker: {e}")           
