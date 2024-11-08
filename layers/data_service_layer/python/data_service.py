@@ -1,6 +1,7 @@
 import boto3
 import logging
 from typing import List
+from location_marker import LocationMarker
 
 logger = logging.getLogger(__name__)
 
@@ -17,7 +18,7 @@ class DataService:
         self.dynamodb = dynamodb_resource or boto3.resource('dynamodb')
         self.table = self.dynamodb.Table(table_name)
 
-    def get_markers(self) -> List[dict]:
+    def get_markers(self) -> List[LocationMarker]:
         """
         Retrieve all markers from the DynamoDB table.
 
@@ -26,12 +27,15 @@ class DataService:
         """
         try: 
             response = self.table.scan()
-            markers = response.get('Items', [])
+            markers_data = response.get('Items', [])
+            markers = [LocationMarker.from_json(marker_data) for marker_data in markers_data]
+            logger.info(f"Retrieved {len(markers)} markers.")
             return markers
         except Exception as e:
-            logger.error(f"Error retrieving markers")
+            logger.error(f"Error retrieving markers: {e}")
+            raise
 
-    def add_marker(self, markerId, name, longitude, latitude, imgurl, tags):
+    def add_marker(self, location_marker: LocationMarker, mark_id):
         """
         Add a new marker to the DynamoDB table.
 
@@ -43,19 +47,15 @@ class DataService:
         :param Tags: Tags associated with the location.
         :return: The response from DynamoDB.
         """
-        response = self.table.put_item(
-            Item={
-                'markerId': str(markerId),  #dynamoDB schema requires string here
-                'name': name,
-                'longitude': longitude,
-                'Latitude': latitude,  
-                'ImgUrl': imgurl,
-                'Tags': tags
-            }
-        )
-        logger.info(f"Marker added: {name} (ID: {markerId})")
-        return response  #response for debugging
+        try:
+            location_marker.set_marker_id(mark_id)
+            marker_data = location_marker.to_json()
 
+            response = self.table.put_item(Item=marker_data)
+            logger.info(f"Marker added: {location_marker.get_marker_id()} with status {location_marker.get_status()}")
+            return response  #response for debugging
+        except Exception as e:
+            logger.error(f"Error adding marker: {e}")           
 
     def delete_marker(self, markerId):
         """
@@ -75,4 +75,3 @@ class DataService:
         except Exception as e:
             logger.error(f"Error deleting marker with markerId {markerId}: {e}")
             return None
-        
