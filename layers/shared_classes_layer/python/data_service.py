@@ -24,40 +24,32 @@ class DataService:
         Retrieve all markers from the DynamoDB table.
 
         :return: A list of markers.
-        :raises NotImplementedError: Indicates the method is not yet implemented.
+        :raises Exception: Raises an exception if there is an issue retrieving markers.
         """
         try: 
             response = self.table.scan()
             markers_data = response.get('Items', [])
             markers = [LocationMarker.from_json(marker_data) for marker_data in markers_data]
-            logger.info(f"Retrieved {len(markers)} markers.")
             return markers
         except Exception as e:
-            logger.error(f"Error retrieving markers: {e}")
-            raise
+            raise Exception("Failed to retrieve markers from DynamoDB") from e
 
-    def add_marker(self, marker: LocationMarker):
+    def add_marker(self, marker: LocationMarker) -> LocationMarker:
         """
-        Add a new marker to the DynamoDB table.
+        Adds a new marker to the DynamoDB table.
 
-        :param markerId: Unique identifier for the location.
-        :param Name: Name of the location.
-        :param Longitude: Longitude coordinate of the location.
-        :param Latitude: Latitude coordinate of the location.
-        :param ImgUrl: URL to an image of the location.
-        :param Tags: Tags associated with the location.
-        :return: The response from DynamoDB.
+        :param marker: A LocationMarker instance with location details.
+        :return: marker with generated ID, or raises an exception on failure.
         """
         try:
-            #generate id
-            unique_id = str(uuid.uuid4())
+            unique_id = str(uuid.uuid4()) #generate id
             marker.set_marker_id(unique_id)
            
-            response = self.table.put_item(Item=marker.to_json())
-            logger.info(f"Marker added: {marker.get_marker_id()} with status {marker.get_status()}")
-            return response  #response for debugging
+            self.table.put_item(Item=marker.to_json())
+
+            return marker
         except Exception as e:
-            logger.error(f"Error adding marker: {e}")           
+            raise Exception("Failed to add marker to DynamoDB") from e        
 
     def delete_marker(self, markerId):
         """

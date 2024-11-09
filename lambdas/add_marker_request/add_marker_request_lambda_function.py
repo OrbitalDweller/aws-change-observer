@@ -3,6 +3,7 @@ import os
 import logging
 import boto3
 from data_service import DataService
+from location_marker import LocationMarker
 
 # Configure logging
 logger = logging.getLogger()
@@ -27,22 +28,34 @@ def lambda_handler(event, context):
             'body': json.dumps({'error': 'Server configuration error.'})
         }
 
-    # marker data is passed in the event body
     try:
-        body = json.loads(event['body'])
-    except (KeyError, json.JSONDecodeError) as e:
+        body = json.loads(event.get('body', '{}'))
+        marker = LocationMarker.from_json(body)
+    except (json.JSONDecodeError, KeyError) as e:
         logger.error(f"Invalid or missing body in the request: {e}")
         return {
             'statusCode': 400,
             'body': json.dumps({'error': 'Invalid request body.'})
         }
+    except Exception as e:
+        logger.error(f"Error creating LocationMarker from JSON: {e}")
+        return {
+            'statusCode': 400,
+            'body': json.dumps({'error': 'Invalid marker data format.'})
+        }
 
     data_service = DataService(table_name=table_name, dynamodb_resource=dynamodb_resource)
-    
-    # TODO: Implement data_service or direct DynamoDB interaction here
 
-    return {
-        'statusCode': 201,
-        'body': json.dumps({'message': 'TODO: Marker addition logic not implemented yet'})
-    }
-    
+    try:
+        saved_marker = data_service.add_marker(marker)
+        logger.info(f"Successfully added marker with ID: {saved_marker.get_marker_id()}")
+        return {
+            'statusCode': 201,
+            'body': json.dumps({'message': 'Marker added successfully', 'marker': saved_marker.to_json()})
+        }
+    except Exception as e:
+        logger.error(f"Failed to add marker to DynamoDB: {e}")
+        return {
+            'statusCode': 500,
+            'body': json.dumps({'error': 'Failed to add marker to DynamoDB.'})
+        }

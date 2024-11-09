@@ -3,6 +3,7 @@ import os
 import logging
 import boto3
 from data_service import DataService
+from location_marker import LocationMarker
 
 # Configure logging
 logger = logging.getLogger()
@@ -32,12 +33,6 @@ def lambda_handler(event, context):
     try:
         markers = data_service.get_markers()
         logger.info(f"Successfully retrieved {len(markers)} markers.")
-    except NotImplementedError as e:
-        logger.error(f"get_markers() not implemented: {e}")
-        return {
-            'statusCode': 501,
-            'body': json.dumps({'error': 'Functionality not implemented.'})
-        }
     except Exception as e:
         logger.error(f"Error retrieving markers: {e}")
         return {
@@ -47,5 +42,5 @@ def lambda_handler(event, context):
 
     return {
         'statusCode': 200,
-        'body': json.dumps({'markers': markers})
+        'body': json.dumps({'markers': [marker.to_json() for marker in markers]})
     }
