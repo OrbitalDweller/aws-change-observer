@@ -46,7 +46,7 @@ def lambda_handler(event, context):
         logger.error(f"Error retrieving marker: {e}")
         return {
             'statusCode': 500,
-            'body': json.dumps({'error': 'Failed to retrieve markers.'})
+            'body': json.dumps({'error': 'Failed to retrieve marker.'})
         }
 
     return {
