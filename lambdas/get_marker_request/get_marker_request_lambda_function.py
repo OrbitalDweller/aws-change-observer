@@ -51,5 +51,5 @@ def lambda_handler(event, context):
 
     return {
         'statusCode': 200,
-        'body': json.dumps({'marker': marker.to_json()})
+        'body': json.dumps(marker.to_json())
     }

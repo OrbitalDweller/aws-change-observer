@@ -22,6 +22,7 @@ class AwsChangeObserverStack(Stack):
         SUBDOMAIN = 'api'
         TABLE_NAME = 'LocationMarkers'        
         GET_MARKERS_REQUEST_LAMBDA_CODE_PATH = 'lambdas/get_markers_request'
+        GET_MARKER_REQUEST_LAMBDA_CODE_PATH = 'lambdas/get_marker_request'
         ADD_MARKER_REQUEST_LAMBDA_CODE_PATH = 'lambdas/add_marker_request'
 
         # Create the DynamoDB table
@@ -61,6 +62,15 @@ class AwsChangeObserverStack(Stack):
             ]
         )
 
+        # Role for Get Marker Lambda
+        get_marker_role = iam.Role(
+            self, 'GetMarkerRole',
+            assumed_by=iam.ServicePrincipal('lambda.amazonaws.com'),
+            managed_policies=[
+                iam.ManagedPolicy.from_aws_managed_policy_name('service-role/AWSLambdaBasicExecutionRole')
+            ]
+        )
+
         # Lambda function for adding a markers
         add_marker_request_lambda = aws_lambda.Function(
             self, 'AddMarkerRequestFunction',
@@ -89,8 +99,23 @@ class AwsChangeObserverStack(Stack):
             },
         )
 
+        # Lambda function for getting a marker by markerId
+        get_marker_request_lambda = aws_lambda.Function(
+            self, 'GetMarkerRequestFunction',
+            function_name='getMarkerRequest',
+            runtime=aws_lambda.Runtime.PYTHON_3_8,
+            handler="get_marker_request_lambda_function.lambda_handler",
+            code=aws_lambda.Code.from_asset(GET_MARKER_REQUEST_LAMBDA_CODE_PATH),
+            layers=[shared_classes_layer],
+            role=get_marker_role,
+            environment={
+                'TABLE_NAME': table.table_name,
+            },
+        )
+
         # Grant access to the DynamoDB table
         table.grant_read_data(get_markers_request_lambda)
+        table.grant_read_data(get_marker_request_lambda)
         table.grant_write_data(add_marker_request_lambda)
 
         # API Gateway
@@ -113,6 +138,18 @@ class AwsChangeObserverStack(Stack):
         markers_resource.add_cors_preflight(
              allow_origins=apigateway.Cors.ALL_ORIGINS,
              allow_methods=["GET", "POST", "OPTIONS"],
+        )
+
+        # Add a specific resource
+        marker_resource = api.root.add_resource("marker")
+        
+        # Add GET method for getting a marker by markerId
+        get_marker_integration = apigateway.LambdaIntegration(get_marker_request_lambda)
+        marker_resource.add_method("GET", get_marker_integration)
+
+        marker_resource.add_cors_preflight(
+             allow_origins=apigateway.Cors.ALL_ORIGINS,
+             allow_methods=["GET", "OPTIONS"],
         )
 
         if is_prod:
