@@ -6,7 +6,7 @@ from image import Image
 from detected_objects import DetectedObjects
 
 class LocationMarker:
-    def __init__(self, coordinate: Coordinate, status: str = "created",
+    def __init__(self, coordinate: Coordinate, name: str = "name me", status: str = "created",
                  subscribed_emails: List[str] = None, current_image: Image = None,
                  historical_images: List[Image] = None, detected_objects: List[DetectedObjects] = None):
         """
@@ -21,6 +21,7 @@ class LocationMarker:
         """
         self._marker_id = None  # Initially set to None, to be assigned later by Data Service
         self._coordinate = coordinate
+        self._name = name
         self._status = status
         self._date_created = datetime.now()  # Set to current date and time
         self._subscribed_emails = subscribed_emails or []
@@ -29,6 +30,12 @@ class LocationMarker:
         self._detected_objects = detected_objects or []
 
     # Getters and Setters
+    def get_name(self):
+        return self._name
+
+    def set_name(self, name: str):
+        self._name = name
+
     def get_marker_id(self) -> Optional[str]:
         return self._marker_id
 
@@ -80,6 +87,7 @@ class LocationMarker:
         """
         return {
             "markerId": self._marker_id,
+            "name": self._name,
             "subscribedEmails": self._subscribed_emails,
             "coordinate": self._coordinate.to_json(),
             "status": self._status,
@@ -99,6 +107,7 @@ class LocationMarker:
         """
         # Initialize the instance with data converted from JSON
         instance = cls(
+            name=data.get("name", None),
             coordinate=Coordinate.from_json(data.get("coordinate", {})),
             status=data.get("status", "created"),
             subscribed_emails=data.get("subscribedEmails", []),
