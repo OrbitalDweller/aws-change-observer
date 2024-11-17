@@ -57,5 +57,5 @@ def lambda_handler(event, context):
             'Access-Control-Allow-Methods': 'GET,OPTIONS',  # Allowed methods
             'Access-Control-Allow-Headers': 'Content-Type',  # Allowed headers
         },
-        'body': json.dumps({'markers': [marker.to_json() for marker in markers]})
+        'body': json.dumps([marker.to_json() for marker in markers])
     }

@@ -131,13 +131,9 @@ class AwsChangeObserverStack(Stack):
         get_markers_integration = apigateway.LambdaIntegration(get_markers_request_lambda)
         markers_resource.add_method("GET", get_markers_integration)
 
-        # Add POST method for adding markers
-        add_marker_integration = apigateway.LambdaIntegration(add_marker_request_lambda)
-        markers_resource.add_method("POST", add_marker_integration)
-
         markers_resource.add_cors_preflight(
              allow_origins=apigateway.Cors.ALL_ORIGINS,
-             allow_methods=["GET", "POST", "OPTIONS"],
+             allow_methods=["GET", "OPTIONS"],
         )
 
         # Add a specific resource
@@ -147,9 +143,13 @@ class AwsChangeObserverStack(Stack):
         get_marker_integration = apigateway.LambdaIntegration(get_marker_request_lambda)
         marker_resource.add_method("GET", get_marker_integration)
 
+        # Add POST method for adding a marker
+        add_marker_integration = apigateway.LambdaIntegration(add_marker_request_lambda)
+        marker_resource.add_method("POST", add_marker_integration)
+
         marker_resource.add_cors_preflight(
              allow_origins=apigateway.Cors.ALL_ORIGINS,
-             allow_methods=["GET", "OPTIONS"],
+             allow_methods=["GET", "POST", "OPTIONS"],
         )
 
         if is_prod:
