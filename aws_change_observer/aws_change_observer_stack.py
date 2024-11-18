@@ -44,27 +44,9 @@ class AwsChangeObserverStack(Stack):
             description="A layer containing the shared classes module"
         )
 
-        # Role for Get Markers Lambda
-        get_markers_role = iam.Role(
-            self, 'GetMarkersRole',
-            assumed_by=iam.ServicePrincipal('lambda.amazonaws.com'),
-            managed_policies=[
-                iam.ManagedPolicy.from_aws_managed_policy_name('service-role/AWSLambdaBasicExecutionRole')
-            ]
-        )
-
-        # Role for Add Marker Lambda
-        add_marker_role = iam.Role(
-            self, 'AddMarkerRole',
-            assumed_by=iam.ServicePrincipal('lambda.amazonaws.com'),
-            managed_policies=[
-                iam.ManagedPolicy.from_aws_managed_policy_name('service-role/AWSLambdaBasicExecutionRole')
-            ]
-        )
-
-        # Role for Get Marker Lambda
-        get_marker_role = iam.Role(
-            self, 'GetMarkerRole',
+        # Role for all lambdas
+        lambda_role = iam.Role(
+            self, 'LambdaRole',
             assumed_by=iam.ServicePrincipal('lambda.amazonaws.com'),
             managed_policies=[
                 iam.ManagedPolicy.from_aws_managed_policy_name('service-role/AWSLambdaBasicExecutionRole')
@@ -79,7 +61,7 @@ class AwsChangeObserverStack(Stack):
             handler="add_marker_request_lambda_function.lambda_handler",
             code=aws_lambda.Code.from_asset(ADD_MARKER_REQUEST_LAMBDA_CODE_PATH),
             layers=[shared_classes_layer],
-            role=add_marker_role,
+            role=lambda_role,
             environment={
                 'TABLE_NAME': table.table_name,
             },
@@ -93,7 +75,7 @@ class AwsChangeObserverStack(Stack):
             handler="get_markers_request_lambda_function.lambda_handler",
             code=aws_lambda.Code.from_asset(GET_MARKERS_REQUEST_LAMBDA_CODE_PATH),
             layers=[shared_classes_layer],
-            role=get_markers_role,
+            role=lambda_role,
             environment={
                 'TABLE_NAME': table.table_name,
             },
@@ -107,7 +89,7 @@ class AwsChangeObserverStack(Stack):
             handler="get_marker_request_lambda_function.lambda_handler",
             code=aws_lambda.Code.from_asset(GET_MARKER_REQUEST_LAMBDA_CODE_PATH),
             layers=[shared_classes_layer],
-            role=get_marker_role,
+            role=lambda_role,
             environment={
                 'TABLE_NAME': table.table_name,
             },
