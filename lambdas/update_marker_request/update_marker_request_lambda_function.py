@@ -62,8 +62,8 @@ def lambda_handler(event, context):
     data_service = DataService(table_name=table_name, dynamodb_resource=dynamodb_resource)
 
     try:
-        saved_marker = data_service.update_marker(marker)
-        logger.info(f"Successfully added marker with ID: {saved_marker.get_marker_id()}")
+        data_service.update_marker(marker)
+        logger.info(f"Successfully updated marker")
         return {
             'statusCode': 201,
             'headers': {
@@ -71,7 +71,7 @@ def lambda_handler(event, context):
                 'Access-Control-Allow-Methods': 'GET,OPTIONS',  # Allowed methods
                 'Access-Control-Allow-Headers': 'Content-Type',  # Allowed headers
             },
-            'body': json.dumps({'message': 'Marker updated successfully', 'marker': saved_marker.to_json()})
+            'body': json.dumps({'message': 'Marker updated successfully'})
         }
     except Exception as e:
         logger.error(f"Failed to update marker and upload to DynamoDB: {e}")
