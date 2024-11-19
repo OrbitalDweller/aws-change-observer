@@ -128,6 +128,7 @@ class AwsChangeObserverStack(Stack):
         # Grant access to the DynamoDB table
         table.grant_read_data(get_markers_request_lambda)
         table.grant_read_data(get_marker_request_lambda)
+        table.grant_read_data(update_marker_request_lambda)
         table.grant_write_data(add_marker_request_lambda)
         table.grant_write_data(update_marker_request_lambda)
         table.grant_write_data(delete_marker_request_lambda)
@@ -152,7 +153,7 @@ class AwsChangeObserverStack(Stack):
 
         # Add a specific resource
         marker_resource = api.root.add_resource("marker")
-        
+                
         # Add GET method for getting a marker by markerId
         get_marker_integration = apigateway.LambdaIntegration(get_marker_request_lambda)
         marker_resource.add_method("GET", get_marker_integration)
@@ -161,9 +162,17 @@ class AwsChangeObserverStack(Stack):
         add_marker_integration = apigateway.LambdaIntegration(add_marker_request_lambda)
         marker_resource.add_method("POST", add_marker_integration)
 
+        # Add PUT method for updating a marker
+        update_marker_integration = apigateway.LambdaIntegration(update_marker_request_lambda)
+        marker_resource.add_method("PUT", update_marker_integration)
+
+        # Add DELETE method for deleting a marker
+        delete_marker_integration = apigateway.LambdaIntegration(delete_marker_request_lambda)
+        marker_resource.add_method("DELETE", delete_marker_integration)
+        
         marker_resource.add_cors_preflight(
-             allow_origins=apigateway.Cors.ALL_ORIGINS,
-             allow_methods=["GET", "POST", "OPTIONS"],
+            allow_origins=apigateway.Cors.ALL_ORIGINS,
+            allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
         )
 
         if is_prod:
