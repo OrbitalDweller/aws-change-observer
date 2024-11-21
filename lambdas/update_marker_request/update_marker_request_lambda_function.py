@@ -63,7 +63,7 @@ def lambda_handler(event, context):
 
     try:
         data_service.update_marker(marker)
-        logger.info(f"Successfully updated marker")
+        logger.info(f"Successfully updated marker.")
         return {
             'statusCode': 201,
             'headers': {

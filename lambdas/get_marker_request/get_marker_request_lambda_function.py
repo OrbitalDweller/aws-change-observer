@@ -25,6 +25,11 @@ def lambda_handler(event, context):
         logger.error("TABLE_NAME environment variable is not set.")
         return {
             'statusCode': 500,
+            'headers': {
+                'Access-Control-Allow-Origin': '*',  # Allow all origins for testing
+                'Access-Control-Allow-Methods': 'GET,OPTIONS',  # Allowed methods
+                'Access-Control-Allow-Headers': 'Content-Type',  # Allowed headers
+            },
             'body': json.dumps({'error': 'Server configuration error.'})
         }
 
@@ -36,6 +41,11 @@ def lambda_handler(event, context):
         logger.error(f"markerId is missing: {e}")
         return {
             'statusCode': 500,
+            'headers': {
+                'Access-Control-Allow-Origin': '*',  # Allow all origins for testing
+                'Access-Control-Allow-Methods': 'GET,OPTIONS',  # Allowed methods
+                'Access-Control-Allow-Headers': 'Content-Type',  # Allowed headers
+            },
             'body': json.dumps({'error': 'Failed to retrieve markerId.'})
         }
 
@@ -46,10 +56,20 @@ def lambda_handler(event, context):
         logger.error(f"Error retrieving marker: {e}")
         return {
             'statusCode': 500,
+            'headers': {
+                'Access-Control-Allow-Origin': '*',  # Allow all origins for testing
+                'Access-Control-Allow-Methods': 'GET,OPTIONS',  # Allowed methods
+                'Access-Control-Allow-Headers': 'Content-Type',  # Allowed headers
+            },
             'body': json.dumps({'error': 'Failed to retrieve marker.'})
         }
 
     return {
         'statusCode': 200,
+        'headers': {
+            'Access-Control-Allow-Origin': '*',  # Allow all origins for testing
+            'Access-Control-Allow-Methods': 'GET,OPTIONS',  # Allowed methods
+            'Access-Control-Allow-Headers': 'Content-Type',  # Allowed headers
+        },
         'body': json.dumps(marker.to_json())
     }

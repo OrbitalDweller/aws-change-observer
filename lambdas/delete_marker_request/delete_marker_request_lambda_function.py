@@ -24,6 +24,11 @@ def lambda_handler(event, context):
         logger.error("TABLE_NAME environment variable is not set.")
         return {
             'statusCode': 500,
+            'headers': {
+                'Access-Control-Allow-Origin': '*',  # Allow all origins for testing
+                'Access-Control-Allow-Methods': 'GET,OPTIONS',  # Allowed methods
+                'Access-Control-Allow-Headers': 'Content-Type',  # Allowed headers
+            },
             'body': json.dumps({'error': 'Server configuration error.'})
         }
 
@@ -35,15 +40,34 @@ def lambda_handler(event, context):
         logger.error(f"markerId is missing: {e}")
         return {
             'statusCode': 500,
+            'headers': {
+                'Access-Control-Allow-Origin': '*',  # Allow all origins for testing
+                'Access-Control-Allow-Methods': 'GET,OPTIONS',  # Allowed methods
+                'Access-Control-Allow-Headers': 'Content-Type',  # Allowed headers
+            },
             'body': json.dumps({'error': 'Failed to retrieve markerId.'})
         }
 
     try:
         marker = data_service.delete_marker(marker_id)
         logger.info(f"Successfully deleted marker.")
+        return {
+            'statusCode': 201,
+            'headers': {
+                'Access-Control-Allow-Origin': '*',  # Allow all origins for testing
+                'Access-Control-Allow-Methods': 'GET,OPTIONS',  # Allowed methods
+                'Access-Control-Allow-Headers': 'Content-Type',  # Allowed headers
+            },
+            'body': json.dumps({'message': 'Marker deleted successfully'})
+        }
     except Exception as e:
         logger.error(f"Error deleting marker: {e}")
         return {
             'statusCode': 500,
+            'headers': {
+                'Access-Control-Allow-Origin': '*',  # Allow all origins for testing
+                'Access-Control-Allow-Methods': 'GET,OPTIONS',  # Allowed methods
+                'Access-Control-Allow-Headers': 'Content-Type',  # Allowed headers
+            },
             'body': json.dumps({'error': 'Failed to delete marker.'})
         }
