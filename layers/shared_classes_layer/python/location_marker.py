@@ -78,6 +78,12 @@ class LocationMarker:
     def set_date_created(self,date_created:datetime):
         self._date_created = date_created
 
+    def get_coordinate(self) -> Coordinate:
+        return self._coordinate
+
+    def set_current_image(self, image: Image):
+        self._current_image = image
+
     # JSON Serialization
     def to_json(self) -> Dict[str, any]:
         """

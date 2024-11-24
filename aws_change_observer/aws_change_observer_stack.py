@@ -48,6 +48,13 @@ class AwsChangeObserverStack(Stack):
             self, 'ObservationBucket',
             removal_policy=RemovalPolicy.DESTROY,  # Use RETAIN in production
             auto_delete_objects=True,              # Deletes objects when the bucket is deleted
+            public_read_access=True,                # Makes all objects publicly readable
+            block_public_access=s3.BlockPublicAccess(
+                block_public_acls=False,  # Allow public ACLs
+                block_public_policy=False,  # Allow public bucket policies
+                ignore_public_acls=False,  # Do not ignore public ACLs
+                restrict_public_buckets=False  # Do not restrict public buckets
+        )
         )
 
         # Define the Lambda Layer for shared classes
