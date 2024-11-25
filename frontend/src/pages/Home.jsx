@@ -1,15 +1,16 @@
-import React from "react";
 import { useGetAllMarkers } from "@/apiQueries/queries";
-import { Card, CardHeader } from "@/components/ui/card";
-import { Link } from "react-router-dom";
+import Map from "@/components/Map";
+import Spinner from "@/components/ui/spinner";
 
 const Home = () => {
-  const { markers, isLoading, isError, isSuccess } = useGetAllMarkers();
-
-  console.log("Markers data:", markers);
+  const { markers, isLoading, isError } = useGetAllMarkers();
 
   if (isLoading) {
-    return <div className="container mx-auto w-full">Loading markers...</div>;
+    return (
+      <div className="container mx-auto w-full h-[80vh] flex items-center justify-center">
+        <Spinner />
+      </div>
+    );
   }
 
   if (isError) {
@@ -19,19 +20,9 @@ const Home = () => {
   }
 
   return (
-    <div className="container mx-auto w-full flex flex-col gap-4 items-center">
-      <div className="flex gap-2 items-center">
-        {markers.map((marker) => {
-          return (
-            <Link to={`/marker/${marker.markerId}`}>
-              <Card key={marker.markerId}>
-                <CardHeader>
-                  {marker.markerId} • {marker.status}
-                </CardHeader>
-              </Card>
-            </Link>
-          );
-        })}
+    <div className="container mx-auto w-full flex flex-col gap-4 items-center py-4">
+      <div className="w-full">
+        <Map markers={markers} />
       </div>
     </div>
   );

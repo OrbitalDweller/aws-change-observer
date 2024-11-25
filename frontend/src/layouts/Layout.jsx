@@ -6,8 +6,8 @@ import AddMarkerDialog from "@/components/AddMarkerDialog";
 const Layout = () => {
   const [showAddTrackerModal, setShowAddTrackerModal] = useState(false);
   return (
-    <div className="flex flex-col min-h-screen">
-      <div className="w-full bg-white">
+    <div className="flex flex-col min-h-screen bg-white">
+      <div className="w-full">
         <AddMarkerDialog
           isOpen={showAddTrackerModal}
           setIsOpen={setShowAddTrackerModal}
