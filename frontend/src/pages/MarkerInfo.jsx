@@ -4,6 +4,7 @@ import { ArrowLeft } from "lucide-react";
 import { Link } from "react-router-dom";
 import { formatDistanceToNow } from "date-fns";
 import ShinyButton from "@/components/ui/shiny-button";
+import Spinner from "@/components/ui/spinner";
 import {
   Tooltip,
   TooltipContent,
@@ -13,16 +14,22 @@ import {
 
 // Access environment variable
 const MAP_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
-console.log("MAP_API_KEY", MAP_API_KEY);
 
 const MarkerInfo = () => {
   const { markerId } = useParams();
   const { marker, isLoading, isError } = useGetMarker(markerId);
 
-  if (isLoading) return <div>Loading...</div>;
+  if (isLoading) {
+    return (
+      <div className="container mx-auto w-full h-[80vh] flex items-center justify-center">
+        <Spinner />
+      </div>
+    );
+  }
+
   if (isError) return <div>Error: {isError.message}</div>;
 
-  const mapImageUrl = `https://maps.googleapis.com/maps/api/staticmap?center=${marker.coordinate.latitude},${marker.coordinate.latitude}&zoom=16&scale=2&size=600x600&key=${MAP_API_KEY}&style=feature:poi|visibility:off`;
+  const mapImageUrl = `https://maps.googleapis.com/maps/api/staticmap?center=${marker.coordinate.latitude},${marker.coordinate.longitude}&zoom=16&scale=2&size=600x600&maptype=satellite&key=${MAP_API_KEY}&style=feature:poi|visibility:off`;
 
   return (
     <div className="container mx-auto w-full flex flex-col gap-4">
@@ -47,7 +54,8 @@ const MarkerInfo = () => {
             </Tooltip>
           </TooltipProvider>
           <h1 className="text-4xl font-bold">
-            {marker?.name || "Untitled Location"}
+            {marker?.name || "Untitled Location"} (
+            {`${marker.coordinate.latitude}, ${marker.coordinate.longitude}`})
           </h1>
         </div>
 
@@ -64,6 +72,12 @@ const MarkerInfo = () => {
         alt="Map"
         className="rounded-lg h-96 w-full object-cover"
       />
+
+      <h2>Latest image:</h2>
+      <img
+        src={marker?.currentImage?.imageURL}
+        className="h-32 w-32 rounded-md"
+      ></img>
     </div>
   );
 };
