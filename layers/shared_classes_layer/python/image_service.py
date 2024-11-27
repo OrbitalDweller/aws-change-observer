@@ -18,7 +18,7 @@ class ImageService:
         """
         self.s3_client = s3_client
         self.bucket_name = bucket_name
-        self.image_fetcher = image_fetcher or ImageFetcher('', '')
+        self.image_fetcher = image_fetcher or ImageFetcher('358ae742-66b9-4560-8834-2da11bc1dbb9', 'ycDjUjtUAI5qcSAPxCnyd7WlFynKdqcu')
 
     def get_latest_image(self, coordinate: Coordinate) -> Image:
         """

@@ -2,7 +2,10 @@ import os
 import boto3
 import logging
 from image_service import ImageService
-from data_service import DataService  # Assuming you have a DataService class
+from data_service import DataService  
+from object_detection_service import ObjectDetectionService
+from detected_objects import DetectedObjects
+
 
 # Configure logging
 logger = logging.getLogger()
@@ -33,6 +36,7 @@ def lambda_handler(event, context):
     # Initialize services
     data_service = DataService(table_name=table_name, dynamodb_resource=dynamodb_resource)
     image_service = ImageService(s3_client, bucket_name)
+    object_detecton_service = ObjectDetectionService()
 
     try:
         # Retrieve markers
@@ -50,6 +54,10 @@ def lambda_handler(event, context):
             # Fetch the latest image for the marker
             image = image_service.get_latest_image(marker.get_coordinate())
             marker.set_current_image(image)
+
+            # Run object detection on the image
+            detected_objects = object_detecton_service.detect_object(s3_bucket_name=image.get_s3_bucket_name(), s3_key=image.get_s3_key())
+            marker.add_detected_objects(detected_objects)
 
             # Update the marker in DynamoDB
             data_service.update_marker(marker)

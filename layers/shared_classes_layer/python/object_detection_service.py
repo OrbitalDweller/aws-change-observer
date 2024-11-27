@@ -29,8 +29,8 @@ class ObjectDetectionService:
                     MaxLabels=10, MinConfidence=50
             )
             names = [label["Name"] for label in response.get("Labels",[])]
-            date = datetime.now()
-            return DetectedObjects(date_detected=date, detected_objects=names)
+            date_taken = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
+            return DetectedObjects(date_detected=date_taken, detected_objects=names)
 
         except Exception as e:
             print(f"Error detecting objects: {e}")
