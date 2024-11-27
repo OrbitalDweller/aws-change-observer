@@ -7,7 +7,11 @@ from aws_cdk import (
     aws_iam as iam,
     aws_certificatemanager as acm,
     aws_route53 as route53,
-    aws_route53_targets as targets
+    aws_route53_targets as targets,
+    aws_events as events,
+    aws_events_targets as event_targets,
+    Duration,
+    aws_s3 as s3
 )
 from constructs import Construct
 
@@ -26,6 +30,7 @@ class AwsChangeObserverStack(Stack):
         ADD_MARKER_REQUEST_LAMBDA_CODE_PATH = 'lambdas/add_marker_request'
         DELETE_MARKER_REQUEST_LAMBDA_CODE_PATH = 'lambdas/delete_marker_request'
         UPDATE_MARKER_REQUEST_LAMBDA_CODE_PATH = 'lambdas/update_marker_request'
+        OBSERVE_LAMBDA_CODE_PATH = 'lambdas/observe'
 
         # Create the DynamoDB table
         table = dynamodb.Table(
@@ -38,6 +43,20 @@ class AwsChangeObserverStack(Stack):
             removal_policy=RemovalPolicy.DESTROY,  # Use RETAIN in production
         )
 
+        # Create the S3 bucket
+        image_bucket = s3.Bucket(
+            self, 'ObservationBucket',
+            removal_policy=RemovalPolicy.DESTROY,  # Use RETAIN in production
+            auto_delete_objects=True,              # Deletes objects when the bucket is deleted
+            public_read_access=True,                # Makes all objects publicly readable
+            block_public_access=s3.BlockPublicAccess(
+                block_public_acls=False,  # Allow public ACLs
+                block_public_policy=False,  # Allow public bucket policies
+                ignore_public_acls=False,  # Do not ignore public ACLs
+                restrict_public_buckets=False  # Do not restrict public buckets
+        )
+        )
+
         # Define the Lambda Layer for shared classes
         shared_classes_layer = aws_lambda.LayerVersion(
             self, 'SharedClassesLayer',
@@ -46,9 +65,9 @@ class AwsChangeObserverStack(Stack):
             description="A layer containing the shared classes module"
         )
 
-        # Role for all lambdas
-        lambda_role = iam.Role(
-            self, 'LambdaRole',
+        # Basic lambda role
+        lambda_role_basic = iam.Role(
+            self, 'LambdaRoleBasic',
             assumed_by=iam.ServicePrincipal('lambda.amazonaws.com'),
             managed_policies=[
                 iam.ManagedPolicy.from_aws_managed_policy_name('service-role/AWSLambdaBasicExecutionRole')
@@ -63,7 +82,7 @@ class AwsChangeObserverStack(Stack):
             handler="add_marker_request_lambda_function.lambda_handler",
             code=aws_lambda.Code.from_asset(ADD_MARKER_REQUEST_LAMBDA_CODE_PATH),
             layers=[shared_classes_layer],
-            role=lambda_role,
+            role=lambda_role_basic,
             environment={
                 'TABLE_NAME': table.table_name,
             },
@@ -77,7 +96,7 @@ class AwsChangeObserverStack(Stack):
             handler="get_markers_request_lambda_function.lambda_handler",
             code=aws_lambda.Code.from_asset(GET_MARKERS_REQUEST_LAMBDA_CODE_PATH),
             layers=[shared_classes_layer],
-            role=lambda_role,
+            role=lambda_role_basic,
             environment={
                 'TABLE_NAME': table.table_name,
             },
@@ -91,7 +110,7 @@ class AwsChangeObserverStack(Stack):
             handler="get_marker_request_lambda_function.lambda_handler",
             code=aws_lambda.Code.from_asset(GET_MARKER_REQUEST_LAMBDA_CODE_PATH),
             layers=[shared_classes_layer],
-            role=lambda_role,
+            role=lambda_role_basic,
             environment={
                 'TABLE_NAME': table.table_name,
             },
@@ -105,7 +124,7 @@ class AwsChangeObserverStack(Stack):
             handler="update_marker_request_lambda_function.lambda_handler",
             code=aws_lambda.Code.from_asset(UPDATE_MARKER_REQUEST_LAMBDA_CODE_PATH),
             layers=[shared_classes_layer],
-            role=lambda_role,
+            role=lambda_role_basic,
             environment={
                 'TABLE_NAME': table.table_name
             },
@@ -119,11 +138,46 @@ class AwsChangeObserverStack(Stack):
             handler="delete_marker_request_lambda_function.lambda_handler",
             code=aws_lambda.Code.from_asset(DELETE_MARKER_REQUEST_LAMBDA_CODE_PATH),
             layers=[shared_classes_layer],
-            role=lambda_role,
+            role=lambda_role_basic,
             environment={
                 'TABLE_NAME': table.table_name
             },
         )
+
+        # Lambda role for observation
+        lambda_role_observe = iam.Role(
+            self, 'LambdaRoleObserve',
+            assumed_by=iam.ServicePrincipal('lambda.amazonaws.com'),
+            managed_policies=[
+                iam.ManagedPolicy.from_aws_managed_policy_name('service-role/AWSLambdaBasicExecutionRole'),
+                iam.ManagedPolicy.from_aws_managed_policy_name('AmazonS3FullAccess'),
+                iam.ManagedPolicy.from_aws_managed_policy_name('AmazonRekognitionFullAccess') 
+            ]
+        )
+
+        # Lambda function for change observation
+        observe_lambda = aws_lambda.Function(
+            self, 'ObserveFunction',
+            function_name='Observe',
+            runtime=aws_lambda.Runtime.PYTHON_3_8,
+            handler="observe_lambda_function.lambda_handler",
+            code=aws_lambda.Code.from_asset(OBSERVE_LAMBDA_CODE_PATH),
+            layers=[shared_classes_layer],
+            role=lambda_role_observe,
+            timeout=Duration.minutes(10), # may need more time
+            memory_size=256, # may need more memory 
+            environment={
+                'TABLE_NAME': table.table_name,
+                'BUCKET_NAME': image_bucket.bucket_name,
+            },
+        )
+
+        daily_rule = events.Rule(
+            self, 'DailyRule',
+            schedule=events.Schedule.cron(minute='0', hour='0'),  # Triggers at 00:00 UTC daily
+        )
+
+        daily_rule.add_target(event_targets.LambdaFunction(observe_lambda))
 
         # Grant access to the DynamoDB table
         table.grant_read_data(get_markers_request_lambda)
@@ -132,6 +186,11 @@ class AwsChangeObserverStack(Stack):
         table.grant_write_data(add_marker_request_lambda)
         table.grant_write_data(update_marker_request_lambda)
         table.grant_write_data(delete_marker_request_lambda)
+        table.grant_read_data(observe_lambda)
+        table.grant_write_data(observe_lambda)
+
+        # Grant access to the S3 bucket
+        image_bucket.grant_read_write(observe_lambda)
 
         # API Gateway
         api = apigateway.RestApi(

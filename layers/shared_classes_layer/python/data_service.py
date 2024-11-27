@@ -92,7 +92,7 @@ class DataService:
             self.table.put_item(Item=marker.to_json())
         
         except Exception as e:
-            raise Exception("Failed to update marker in DynamoDB") from e
+            raise Exception(f"Failed to update marker in DynamoDB: {e}")
         
     def get_marker(self, marker_id: str) -> LocationMarker:
         """
