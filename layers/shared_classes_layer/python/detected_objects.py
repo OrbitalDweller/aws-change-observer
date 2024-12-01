@@ -58,3 +58,28 @@ class DetectedObjects:
         """
         return (f"DetectedObjects(date_detected='{self._date_detected}', "
                 f"detected_objects={self._detected_objects})")
+
+    def compare(self, other: 'DetectedObjects') -> str:
+        """
+        Compares the current instance with another DetectedObjects instance.
+
+        :param other: Another DetectedObjects instance to compare against.
+        :return: A string message indicating the differences.
+        """
+        differences = []
+
+        set_self_objects = set(self._detected_objects)
+        set_other_objects = set(other._detected_objects)
+
+        missing_in_self = set_other_objects - set_self_objects
+        missing_in_other = set_self_objects - set_other_objects
+
+        if missing_in_other:
+            differences.append(f"New objects: {sorted(missing_in_other)}")
+        if missing_in_self:
+            differences.append(f"Objects no longer detected: {sorted(missing_in_self)}")
+
+        if not differences:
+            return "No object changes."
+
+        return "\n".join(differences)
