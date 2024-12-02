@@ -1,5 +1,6 @@
 from typing import List, Dict, Optional
 from datetime import datetime
+import re
 
 from coordinate import Coordinate
 from image import Image
@@ -140,3 +141,34 @@ class LocationMarker:
                 f"current_image={self._current_image}, "
                 f"historical_images={self._historical_images}, "
                 f"detected_objects={self._detected_objects})")
+
+    def _validate_email(self) -> None:
+        """
+        Validates email addresses using a regular expression.
+        
+        :raises ValueError: If any email is invalid.
+        """
+        email_pattern = r'^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$'
+        for email in self._subscribed_emails:
+            if not re.match(email_pattern, email):
+                raise ValueError(f"Invalid email address: {email}")
+
+    def _validate_coordinate(self) -> None:
+        """
+        Validates the coordinate. Ensures it's not None and calls the `validate` method on the `Coordinate` object.
+
+        :raises ValueError: If the coordinate is None or invalid.
+        """
+        if self._coordinate is None:
+            raise ValueError("Coordinate cannot be None.")
+        if not self._coordinate.validate():
+            raise ValueError(f"Invalid coordinate: {self._coordinate}")
+
+    def validate(self) -> None:
+        """
+        Validates the LocationMarker instance by checking its coordinate and subscribed emails.
+        
+        :raises ValueError: If any validation fails.
+        """
+        self._validate_coordinate()
+        self._validate_email()

@@ -51,6 +51,22 @@ def lambda_handler(event, context):
         body = json.loads(event.get('body', '{}'))
         marker = LocationMarker.from_json(body)
         marker.set_marker_id(marker_id)
+
+        # Validate the LocationMarker
+        try:
+            marker.validate()
+        except ValueError as e:
+            logger.error(f"Validation failed: {e}")
+            return {
+                'statusCode': 400,
+                'headers': {
+                    'Access-Control-Allow-Origin': '*',  # Allow all origins for testing
+                    'Access-Control-Allow-Methods': 'POST,OPTIONS',  # Allowed methods
+                    'Access-Control-Allow-Headers': 'Content-Type',  # Allowed headers
+                },
+                'body': json.dumps({'error': f'Validation error: {str(e)}'})
+            }
+
     except (json.JSONDecodeError, KeyError) as e:
         logger.error(f"Invalid or missing body in the request: {e}")
         return {

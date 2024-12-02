@@ -58,3 +58,20 @@ class Coordinate:
         :return: String representation of the coordinate.
         """
         return f"Coordinate(longitude='{self._longitude}', latitude='{self._latitude}')"
+
+    def validate(self) -> bool:
+        """
+        Validates the coordinate values for longitude and latitude.
+        
+        :return: True if the coordinates are valid, False otherwise.
+        """
+        try:
+            longitude = float(self._longitude)
+            latitude = float(self._latitude)
+            
+            is_valid_longitude = -180.0 <= longitude <= 180.0
+            is_valid_latitude = -90.0 <= latitude <= 90.0
+
+            return is_valid_longitude and is_valid_latitude
+        except ValueError:
+            return False
