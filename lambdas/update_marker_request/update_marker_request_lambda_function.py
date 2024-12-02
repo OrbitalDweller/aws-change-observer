@@ -27,15 +27,30 @@ def lambda_handler(event, context):
             'statusCode': 500,
             'headers': {
                 'Access-Control-Allow-Origin': '*',  # Allow all origins for testing
-                'Access-Control-Allow-Methods': 'GET,OPTIONS',  # Allowed methods
+                'Access-Control-Allow-Methods': 'PUT,OPTIONS',  # Allowed methods
                 'Access-Control-Allow-Headers': 'Content-Type',  # Allowed headers
             },
             'body': json.dumps({'error': 'Server configuration error.'})
         }
 
     try:
+        marker_id = event["queryStringParameters"]["markerId"]
+    except:
+        logger.error(f"markerId is missing: {e}")
+        return {
+            'statusCode': 500,
+            'headers': {
+                'Access-Control-Allow-Origin': '*',  # Allow all origins for testing
+                'Access-Control-Allow-Methods': 'PUT,OPTIONS',  # Allowed methods
+                'Access-Control-Allow-Headers': 'Content-Type',  # Allowed headers
+            },
+            'body': json.dumps({'error': 'Failed to retrieve markerId.'})
+        }
+
+    try:
         body = json.loads(event.get('body', '{}'))
         marker = LocationMarker.from_json(body)
+        marker.set_marker_id(marker_id)
 
         # Validate the LocationMarker
         try:
@@ -51,14 +66,14 @@ def lambda_handler(event, context):
                 },
                 'body': json.dumps({'error': f'Validation error: {str(e)}'})
             }
-            
+
     except (json.JSONDecodeError, KeyError) as e:
         logger.error(f"Invalid or missing body in the request: {e}")
         return {
             'statusCode': 400,
             'headers': {
                 'Access-Control-Allow-Origin': '*',  # Allow all origins for testing
-                'Access-Control-Allow-Methods': 'GET,OPTIONS',  # Allowed methods
+                'Access-Control-Allow-Methods': 'PUT,OPTIONS',  # Allowed methods
                 'Access-Control-Allow-Headers': 'Content-Type',  # Allowed headers
             },
             'body': json.dumps({'error': 'Invalid request body.'})
@@ -69,7 +84,7 @@ def lambda_handler(event, context):
             'statusCode': 400,
             'headers': {
                 'Access-Control-Allow-Origin': '*',  # Allow all origins for testing
-                'Access-Control-Allow-Methods': 'GET,OPTIONS',  # Allowed methods
+                'Access-Control-Allow-Methods': 'PUT,OPTIONS',  # Allowed methods
                 'Access-Control-Allow-Headers': 'Content-Type',  # Allowed headers
             },
             'body': json.dumps({'error': 'Invalid marker data format.'})
@@ -84,7 +99,7 @@ def lambda_handler(event, context):
             'statusCode': 201,
             'headers': {
                 'Access-Control-Allow-Origin': '*',  # Allow all origins for testing
-                'Access-Control-Allow-Methods': 'GET,OPTIONS',  # Allowed methods
+                'Access-Control-Allow-Methods': 'PUT,OPTIONS',  # Allowed methods
                 'Access-Control-Allow-Headers': 'Content-Type',  # Allowed headers
             },
             'body': json.dumps({'message': 'Marker updated successfully'})
@@ -95,7 +110,7 @@ def lambda_handler(event, context):
             'statusCode': 500,
             'headers': {
                 'Access-Control-Allow-Origin': '*',  # Allow all origins for testing
-                'Access-Control-Allow-Methods': 'GET,OPTIONS',  # Allowed methods
+                'Access-Control-Allow-Methods': 'PUT,OPTIONS',  # Allowed methods
                 'Access-Control-Allow-Headers': 'Content-Type',  # Allowed headers
             },
             'body': json.dumps({'error': 'Failed to update marker and upload to DynamoDB.'})
