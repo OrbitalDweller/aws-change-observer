@@ -2,6 +2,7 @@ from image_fetcher import ImageFetcher
 from coordinate import Coordinate
 from image import Image
 from datetime import datetime
+from typing import List
 
 class ImageService:
     """
@@ -47,8 +48,53 @@ class ImageService:
             raise RuntimeError(f"Error uploading image to S3: {e}")
 
         # Create an Image object
-        image = self.create_image(image_url, s3_key)
+        image = self.create_image(image_url, s3_key, "Latest available image")
         return image
+
+    def get_historical_images(self, coordinate: Coordinate) -> List[Image]:
+        """
+        Fetch historical images for a coordinate, upload them to S3, and return a list of Image objects.
+
+        :param coordinate: A Coordinate object representing the location.
+        :return: A list of Image objects containing the uploaded image metadata.
+        :raises ValueError: If the image fetching or uploading fails.
+        """
+        images = []
+
+        # Set the coordinates for the area of interest
+        try:
+            self.image_fetcher.set_coordinates(
+                coordinate.get_longitude(), coordinate.get_latitude()
+            )
+        except Exception as e:
+            raise RuntimeError(f"Error setting coordinates: {e}")
+
+        # Define the historical image fetchers and their descriptions
+        historical_image_fetchers = [
+            (self.image_fetcher.get_image_6_months_ago, "Image from 6 months ago"),
+            (self.image_fetcher.get_image_1_year_ago, "Image from 1 year ago"),
+            (self.image_fetcher.get_image_2_years_ago, "Image from 2 years ago"),
+            (self.image_fetcher.get_image_5_years_ago, "Image from 5 years ago"),
+        ]
+
+        # Fetch, upload, and create Image objects for each historical image
+        for fetcher, description in historical_image_fetchers:
+            try:
+                png_image = fetcher()
+                if not png_image:
+                    raise ValueError(f"Failed to fetch image: No data returned for {description}")
+
+                # Generate a unique S3 key for each image
+                s3_key = f"images/{coordinate.get_latitude()}_{coordinate.get_longitude()}_{description.replace(' ', '_')}_{datetime.utcnow().strftime('%Y%m%d%H%M%S')}.png"
+                image_url = self.upload_image_to_s3(png_image, s3_key)
+
+                # Create an Image object with a description
+                image = self.create_image(image_url, s3_key, description)
+                images.append(image)
+            except Exception as e:
+                raise RuntimeError(f"Error processing {description}: {e}")
+
+        return images
 
     def upload_image_to_s3(self, image_data: bytes, object_key: str) -> str:
         """
@@ -69,17 +115,18 @@ class ImageService:
         region = self.s3_client.meta.region_name
         return f"https://{self.bucket_name}.s3.{region}.amazonaws.com/{object_key}"
 
-    def create_image(self, image_url: str, s3_key: str) -> Image:
+    def create_image(self, image_url: str, s3_key: str, description: str) -> Image:
         """
         Create an Image object with the provided metadata.
 
+        :param description: description of the image.
         :param image_url: The URL of the uploaded image.
         :param s3_key: The S3 key where the image is stored.
         :return: An Image object.
         """
-        date_taken = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
+
         return Image(
-            date_taken=date_taken,
+            description=description,
             image_url=image_url,
             s3_key=s3_key,
             s3_bucket_name=self.bucket_name
