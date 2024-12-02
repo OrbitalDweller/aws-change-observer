@@ -1,23 +1,23 @@
 import json
 
 class Image:
-    def __init__(self, date_taken: str, image_url: str, s3_key: str, s3_bucket_name: str):
+    def __init__(self, description: str, image_url: str, s3_key: str, s3_bucket_name: str):
         """
         Constructor for the Image class.
         
-        :param date_taken: Date when the image was taken, as a string.
+        :param decription: description of the image as a string.
         :param image_url: URL of the image.
         :param s3_key: S3 key for the image in the bucket.
         :param s3_bucket_name: S3 bucket name where the image is stored.
         """
-        self._date_taken = date_taken
+        self._description = description
         self._image_url = image_url
         self._s3_key = s3_key
         self._s3_bucket_name = s3_bucket_name
 
     # Setters
-    def set_date_taken(self, date: str):
-        self._date_taken = date
+    def set_description(self, description: str):
+        self._description = description
 
     def set_image_url(self, url: str):
         self._image_url = url
@@ -29,8 +29,8 @@ class Image:
         self._s3_bucket_name = name
 
     # Getters
-    def get_date_taken(self) -> str:
-        return self._date_taken
+    def get_description(self) -> str:
+        return self._description
 
     def get_image_url(self) -> str:
         return self._image_url
@@ -49,7 +49,7 @@ class Image:
         :return: Dictionary with image details.
         """
         return {
-            "dateTaken": self._date_taken,
+            "description": self._description,
             "imageURL": self._image_url,
             "s3_key": self._s3_key,
             "s3_bucket_name": self._s3_bucket_name
@@ -64,14 +64,14 @@ class Image:
         :return: A new Image instance.
         """
         return cls(
-            date_taken=data.get("dateTaken", ""),
+            description=data.get("description", ""),
             image_url=data.get("imageURL", ""),
             s3_key=data.get("s3_key", ""),
             s3_bucket_name=data.get("s3_bucket_name", "")
         )
 
     def __repr__(self) -> str:
-        return (f"Image(date_taken='{self._date_taken}', "
+        return (f"Image(description='{self._description}', "
                 f"image_url='{self._image_url}', "
                 f"s3_key='{self._s3_key}', "
                 f"s3_bucket_name='{self._s3_bucket_name}')")

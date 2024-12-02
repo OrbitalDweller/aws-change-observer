@@ -55,6 +55,11 @@ def lambda_handler(event, context):
             image = image_service.get_latest_image(marker.get_coordinate())
             marker.set_current_image(image)
 
+            # Fetch historical images for the marker
+            if not marker.get_historical_images():
+                images = image_service.get_historical_images(marker.get_coordinate())
+                marker.set_historical_images(images)
+
             # Run object detection on the image
             detected_objects = object_detecton_service.detect_object(s3_bucket_name=image.get_s3_bucket_name(), s3_key=image.get_s3_key())
             if not marker.get_detected_objects():

@@ -64,6 +64,9 @@ class LocationMarker:
     def get_historical_images(self) -> List[Image]:
         return self._historical_images
 
+    def set_historical_images(self, images: List[Image]):
+        self._historical_images = images
+
     def add_image_to_history(self, image: Image):
         self._historical_images.append(image)
 
