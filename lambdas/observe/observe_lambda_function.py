@@ -57,7 +57,16 @@ def lambda_handler(event, context):
 
             # Run object detection on the image
             detected_objects = object_detecton_service.detect_object(s3_bucket_name=image.get_s3_bucket_name(), s3_key=image.get_s3_key())
-            marker.add_detected_objects(detected_objects)
+            if not marker.get_detected_objects():
+                marker.add_detected_objects(detected_objects)
+                marker.set_status("First Observation Occured. Wait another day for more data.")
+            else:
+                change = marker.get_detected_objects()[-1].compare(detected_objects)
+                marker.set_status(change)
+                marker.add_detected_objects(detected_objects)
+
+            if len(marker.get_detected_objects()) > 3: # discard old obervations
+                marker.get_detected_objects().pop(0)
 
             # Update the marker in DynamoDB
             data_service.update_marker(marker)
