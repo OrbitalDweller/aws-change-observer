@@ -85,11 +85,6 @@ class DataService:
             if not original_marker_data:
                 raise ValueError(f"Marker with ID {marker_id} does not exist")
 
-            #compare markers to create status
-            original_marker = LocationMarker.from_json(original_marker_data)
-            new_status = marker.compare(original_marker)
-            marker.set_status(new_status)
-
             #remove old entry
             self.delete_marker(marker_id)
 

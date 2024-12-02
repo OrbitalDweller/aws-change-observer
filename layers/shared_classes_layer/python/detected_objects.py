@@ -71,13 +71,13 @@ class DetectedObjects:
         set_self_objects = set(self._detected_objects)
         set_other_objects = set(other._detected_objects)
 
-        missing_in_self = set_other_objects - set_self_objects
         missing_in_other = set_self_objects - set_other_objects
+        new_in_other = set_other_objects - set_self_objects
 
+        if new_in_other:
+            differences.append(f"New objects: {sorted(new_in_other)}")
         if missing_in_other:
-            differences.append(f"New objects: {sorted(missing_in_other)}")
-        if missing_in_self:
-            differences.append(f"Objects no longer detected: {sorted(missing_in_self)}")
+            differences.append(f"Objects no longer detected: {sorted(missing_in_other)}")
 
         if not differences:
             return "No object changes."
