@@ -10,6 +10,12 @@ class ImageFetcher:
     """
 
     def __init__(self, client_id: str, client_secret: str, buffer: float = 0.005):
+        """
+        Initialize the fetcher with Sentinel Hub credentials and optional buffer size.
+        :param client_id: Sentinel Hub Client ID.
+        :param client_secret: Sentinel Hub Client Secret.
+        :param buffer: Buffer distance in degrees to create the bounding box.
+        """
         if not client_id or not client_secret:
             raise ValueError("Client ID and Client Secret are required.")
         
@@ -20,6 +26,10 @@ class ImageFetcher:
         self.aoi = None  # Area of Interest
 
     def _get_access_token(self) -> str:
+        """
+        Obtain an access token from Sentinel Hub using http.client.
+        :return: Access token as a string.
+        """
         conn = http.client.HTTPSConnection("services.sentinel-hub.com")
         credentials = f"{self.client_id}:{self.client_secret}"
         headers = {
@@ -36,6 +46,12 @@ class ImageFetcher:
         return data["access_token"]
 
     def set_coordinates(self, lon: str, lat: str):
+        """
+        Set the latitude and longitude of the center point for the Area of Interest (AOI).
+        :param lon: Longitude as a string (-180 to 180).
+        :param lat: Latitude as a string (-90 to 90).
+        :raises ValueError: If the input strings cannot be converted to floats or are out of bounds.
+        """
         try:
             lon = float(lon)
             lat = float(lat)
