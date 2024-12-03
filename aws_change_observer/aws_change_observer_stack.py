@@ -31,6 +31,7 @@ class AwsChangeObserverStack(Stack):
         DELETE_MARKER_REQUEST_LAMBDA_CODE_PATH = 'lambdas/delete_marker_request'
         UPDATE_MARKER_REQUEST_LAMBDA_CODE_PATH = 'lambdas/update_marker_request'
         OBSERVE_LAMBDA_CODE_PATH = 'lambdas/observe'
+        SNS_TOPIC_ARN = 'arn:aws:sns:us-east-1:123456789012:YourSNSTopic'  # Update this with your actual ARN
 
         # Create the DynamoDB table
         table = dynamodb.Table(
@@ -54,7 +55,7 @@ class AwsChangeObserverStack(Stack):
                 block_public_policy=False,  # Allow public bucket policies
                 ignore_public_acls=False,  # Do not ignore public ACLs
                 restrict_public_buckets=False  # Do not restrict public buckets
-        )
+            )
         )
 
         # Define the Lambda Layer for shared classes
@@ -74,7 +75,7 @@ class AwsChangeObserverStack(Stack):
             ]
         )
 
-        # Lambda function for adding a markers
+        # Lambda function for adding a marker
         add_marker_request_lambda = aws_lambda.Function(
             self, 'AddMarkerRequestFunction',
             function_name='addMarkerRequest',
@@ -169,6 +170,7 @@ class AwsChangeObserverStack(Stack):
             environment={
                 'TABLE_NAME': table.table_name,
                 'BUCKET_NAME': image_bucket.bucket_name,
+                'SNS_TOPIC_ARN': SNS_TOPIC_ARN
             },
         )
 
@@ -266,4 +268,3 @@ class AwsChangeObserverStack(Stack):
                 record_name=SUBDOMAIN,
                 target=route53.RecordTarget.from_alias(targets.ApiGatewayDomain(custom_domain))
             )
-
