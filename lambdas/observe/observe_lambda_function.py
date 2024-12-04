@@ -5,7 +5,7 @@ from image_service import ImageService
 from data_service import DataService  
 from object_detection_service import ObjectDetectionService
 from detected_objects import DetectedObjects
-from shared_classes_layer.notification_service import NotificationService  # Import NotificationService
+from notification_service import NotificationService 
 
 # Configure logging
 logger = logging.getLogger()
@@ -45,7 +45,7 @@ def lambda_handler(event, context):
     data_service = DataService(table_name=table_name, dynamodb_resource=dynamodb_resource)
     image_service = ImageService(s3_client, bucket_name)
     object_detecton_service = ObjectDetectionService()
-    notification_service = NotificationService(sns_topic_arn=sns_topic_arn)  # Initialize NotificationService
+    notification_service = NotificationService(sns_topic_arn=sns_topic_arn)
 
     try:
         # Retrieve markers
@@ -58,6 +58,7 @@ def lambda_handler(event, context):
             "body": f"Error retrieving markers: {e}"
         }
 
+    # observations
     for marker in markers:
         try:
             # Fetch the latest image for the marker
@@ -72,39 +73,22 @@ def lambda_handler(event, context):
             data_service.update_marker(marker)
             logger.info(f"Successfully updated marker with ID {marker.get_marker_id()}.")
 
-            # Check notification condition and notify subscribers
-            if should_notify(marker):
-                emails = marker.get('subscribedEmails', [])
-                if emails:
-                    try:
-                        notification_service.notify_subscribers(marker.get_marker_id(), emails)
-                        logger.info(f"Notifications sent for marker {marker.get_marker_id()} to {emails}.")
-                    except Exception as e:
-                        logger.error(f"Failed to notify subscribers for marker {marker.get_marker_id()}: {e}")
-                else:
-                    logger.info(f"No subscribers found for marker {marker.get_marker_id()}.")
         except Exception as e:
             logger.error(f"Failed to update marker with ID {marker.get_marker_id()}: {e}")
+
+    # notifications
+    for marker in markers:
+        emails = marker.get('subscribedEmails', [])
+        if emails:
+            try:
+                notification = marker.get_name() + '\n' + marker.get_status()
+                notification_service.notify_subscribers(notification, emails)
+                logger.info(f"Notifications sent for marker {marker.get_marker_id()} to {emails}.")
+            except Exception as e:
+                logger.error(f"Failed to notify subscribers for marker {marker.get_marker_id()}: {e}")
 
     return {
         "statusCode": 200,
         "body": f"Processed {len(markers)} markers."
     }
 
-def should_notify(marker):
-    """
-    Condition for sending notifications.
-
-    :param marker: The marker data from DynamoDB.
-    :return: Boolean indicating whether to notify.
-    """
-    updated_at = marker.get('updatedAt')
-    if updated_at:
-        try:
-            from datetime import datetime, timedelta
-            updated_datetime = datetime.fromisoformat(updated_at)
-            return updated_datetime >= datetime.utcnow() - timedelta(days=1)
-        except ValueError:
-            logger.warning(f"Invalid updatedAt format for marker {marker.get_marker_id()}: {updated_at}")
-            return False
-    return False

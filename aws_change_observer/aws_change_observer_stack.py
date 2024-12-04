@@ -11,7 +11,8 @@ from aws_cdk import (
     aws_events as events,
     aws_events_targets as event_targets,
     Duration,
-    aws_s3 as s3
+    aws_s3 as s3,
+    aws_sns as sns
 )
 from constructs import Construct
 
@@ -31,7 +32,14 @@ class AwsChangeObserverStack(Stack):
         DELETE_MARKER_REQUEST_LAMBDA_CODE_PATH = 'lambdas/delete_marker_request'
         UPDATE_MARKER_REQUEST_LAMBDA_CODE_PATH = 'lambdas/update_marker_request'
         OBSERVE_LAMBDA_CODE_PATH = 'lambdas/observe'
-        SNS_TOPIC_ARN = 'arn:aws:sns:us-east-1:123456789012:YourSNSTopic'  # Update this with your actual ARN
+
+        # Create an SNS Topic
+        topic = sns.Topic(
+            self, 
+            "MySnsTopic",
+            display_name="Observer SNS Topic",  
+            topic_name="observer-sns-topic"    
+        )
 
         # Create the DynamoDB table
         table = dynamodb.Table(
@@ -170,7 +178,7 @@ class AwsChangeObserverStack(Stack):
             environment={
                 'TABLE_NAME': table.table_name,
                 'BUCKET_NAME': image_bucket.bucket_name,
-                'SNS_TOPIC_ARN': SNS_TOPIC_ARN
+                'SNS_TOPIC_ARN': topic.topic_arn
             },
         )
 
