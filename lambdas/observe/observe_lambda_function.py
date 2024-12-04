@@ -5,7 +5,7 @@ from image_service import ImageService
 from data_service import DataService  
 from object_detection_service import ObjectDetectionService
 from detected_objects import DetectedObjects
-
+from notification_service import NotificationService 
 
 # Configure logging
 logger = logging.getLogger()
@@ -33,10 +33,19 @@ def lambda_handler(event, context):
             "body": "BUCKET_NAME environment variable is not set."
         }
 
+    sns_topic_arn = os.environ.get('SNS_TOPIC_ARN')
+    if not sns_topic_arn:
+        logger.error("SNS_TOPIC_ARN environment variable is not set.")
+        return {
+            "statusCode": 500,
+            "body": "SNS_TOPIC_ARN environment variable is not set."
+        }
+
     # Initialize services
     data_service = DataService(table_name=table_name, dynamodb_resource=dynamodb_resource)
     image_service = ImageService(s3_client, bucket_name)
     object_detecton_service = ObjectDetectionService()
+    notification_service = NotificationService(sns_topic_arn=sns_topic_arn)
 
     try:
         # Retrieve markers
@@ -49,6 +58,7 @@ def lambda_handler(event, context):
             "body": f"Error retrieving markers: {e}"
         }
 
+    # observations
     for marker in markers:
         try:
             # Fetch the latest image for the marker
@@ -76,10 +86,23 @@ def lambda_handler(event, context):
             # Update the marker in DynamoDB
             data_service.update_marker(marker)
             logger.info(f"Successfully updated marker with ID {marker.get_marker_id()}.")
+
         except Exception as e:
             logger.error(f"Failed to update marker with ID {marker.get_marker_id()}: {e}")
+
+    # notifications
+    for marker in markers:
+        emails = marker.get('subscribedEmails', [])
+        if emails:
+            try:
+                notification = marker.get_name() + '\n' + marker.get_status()
+                notification_service.notify_subscribers(notification, emails)
+                logger.info(f"Notifications sent for marker {marker.get_marker_id()} to {emails}.")
+            except Exception as e:
+                logger.error(f"Failed to notify subscribers for marker {marker.get_marker_id()}: {e}")
 
     return {
         "statusCode": 200,
         "body": f"Processed {len(markers)} markers."
     }
+

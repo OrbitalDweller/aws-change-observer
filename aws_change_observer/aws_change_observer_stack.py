@@ -11,7 +11,8 @@ from aws_cdk import (
     aws_events as events,
     aws_events_targets as event_targets,
     Duration,
-    aws_s3 as s3
+    aws_s3 as s3,
+    aws_sns as sns
 )
 from constructs import Construct
 
@@ -31,6 +32,14 @@ class AwsChangeObserverStack(Stack):
         DELETE_MARKER_REQUEST_LAMBDA_CODE_PATH = 'lambdas/delete_marker_request'
         UPDATE_MARKER_REQUEST_LAMBDA_CODE_PATH = 'lambdas/update_marker_request'
         OBSERVE_LAMBDA_CODE_PATH = 'lambdas/observe'
+
+        # Create an SNS Topic
+        topic = sns.Topic(
+            self, 
+            "MySnsTopic",
+            display_name="Observer SNS Topic",  
+            topic_name="observer-sns-topic"    
+        )
 
         # Create the DynamoDB table
         table = dynamodb.Table(
@@ -54,7 +63,7 @@ class AwsChangeObserverStack(Stack):
                 block_public_policy=False,  # Allow public bucket policies
                 ignore_public_acls=False,  # Do not ignore public ACLs
                 restrict_public_buckets=False  # Do not restrict public buckets
-        )
+            )
         )
 
         # Define the Lambda Layer for shared classes
@@ -74,7 +83,7 @@ class AwsChangeObserverStack(Stack):
             ]
         )
 
-        # Lambda function for adding a markers
+        # Lambda function for adding a marker
         add_marker_request_lambda = aws_lambda.Function(
             self, 'AddMarkerRequestFunction',
             function_name='addMarkerRequest',
@@ -169,6 +178,7 @@ class AwsChangeObserverStack(Stack):
             environment={
                 'TABLE_NAME': table.table_name,
                 'BUCKET_NAME': image_bucket.bucket_name,
+                'SNS_TOPIC_ARN': topic.topic_arn
             },
         )
 
@@ -266,4 +276,3 @@ class AwsChangeObserverStack(Stack):
                 record_name=SUBDOMAIN,
                 target=route53.RecordTarget.from_alias(targets.ApiGatewayDomain(custom_domain))
             )
-
