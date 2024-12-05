@@ -1,10 +1,12 @@
 import axios from "axios";
 import { toast } from "sonner";
-import { useMutation, useQuery } from "react-query";
+import { useMutation, useQuery, useQueryClient } from "react-query";
+import { useNavigate } from "react-router-dom";
 
 const API_URL = "https://api.change-observer.com";
 
 export const useAddMarker = () => {
+  const queryClient = useQueryClient();
   const addMarkerRequest = async (markerData) => {
     const response = await axios.post(`${API_URL}/marker`, markerData);
     return response.data;
@@ -18,6 +20,7 @@ export const useAddMarker = () => {
   } = useMutation(addMarkerRequest, {
     onSuccess: () => {
       toast.success("Marker added successfully");
+      queryClient.invalidateQueries(["markers"]);
     },
     onError: (error) => {
       toast.error(error.response?.data?.message || "Error adding marker");
@@ -29,8 +32,12 @@ export const useAddMarker = () => {
 };
 
 export const useDeleteMarker = () => {
+  const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const deleteMarkerRequest = async (markerId) => {
-    const response = await axios.delete(`${API_URL}/marker/${markerId}`);
+    const response = await axios.delete(
+      `${API_URL}/marker?markerId=${markerId}`
+    );
     return response.data;
   };
 
@@ -42,6 +49,8 @@ export const useDeleteMarker = () => {
   } = useMutation(deleteMarkerRequest, {
     onSuccess: () => {
       toast.success("Marker deleted successfully");
+      queryClient.invalidateQueries(["markers"]);
+      navigate("/");
     },
     onError: (error) => {
       toast.error(error.response?.data?.message || "Error deleting marker");
@@ -100,12 +109,14 @@ export const useGetAllMarkers = () => {
 };
 
 export const useEditMarker = () => {
-  const editMarkerRequest = async ({ markerId, markerData }) => {
+  const queryClient = useQueryClient();
+
+  const editMarkerRequest = async ({ markerId, data }) => {
     const response = await axios.put(
-      `${API_URL}/markers/${markerId}`,
-      markerData
+      `${API_URL}/marker?markerId=${markerId}`,
+      data
     );
-    return response.data;
+    return { data: response.data, markerId };
   };
 
   const {
@@ -114,8 +125,10 @@ export const useEditMarker = () => {
     isError,
     isSuccess,
   } = useMutation(editMarkerRequest, {
-    onSuccess: () => {
+    onSuccess: (response) => {
       toast.success("Marker edited successfully");
+      queryClient.invalidateQueries(["markers"]);
+      queryClient.invalidateQueries(["marker", response.markerId]);
     },
     onError: (error) => {
       toast.error(error.response?.data?.message || "Error editing marker");
