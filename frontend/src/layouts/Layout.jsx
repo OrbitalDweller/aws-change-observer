@@ -1,16 +1,27 @@
-import { Link, Outlet } from "react-router-dom";
+import { Link, Outlet, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import PulsatingButton from "@/components/ui/pulsating-button";
-import AddMarkerDialog from "@/components/AddMarkerDialog";
+import MarkerFormDialog from "@/components/MarkerFormDialog";
+import { useAddMarker } from "@/apiQueries/queries";
 
 const Layout = () => {
-  const [showAddTrackerModal, setShowAddTrackerModal] = useState(false);
+  const [showMarkerModal, setShowMarkerModal] = useState(false);
+  const { addMarker } = useAddMarker();
+  const navigate = useNavigate();
+
+  const handleAddMarker = async (data) => {
+    const newMarker = await addMarker(data);
+    navigate(`/marker/${newMarker.markerId}`);
+  };
+
   return (
     <div className="flex flex-col min-h-screen bg-white">
       <div className="w-full">
-        <AddMarkerDialog
-          isOpen={showAddTrackerModal}
-          setIsOpen={setShowAddTrackerModal}
+        <MarkerFormDialog
+          isOpen={showMarkerModal}
+          setIsOpen={setShowMarkerModal}
+          onSave={handleAddMarker}
+          mode="add"
         />
         <header className="sticky top-0 z-10 max-w-7xl mx-auto py-6 flex items-center justify-between">
           <Link to="/">
@@ -18,7 +29,7 @@ const Layout = () => {
           </Link>
           <PulsatingButton
             className="items-end"
-            onClick={() => setShowAddTrackerModal(true)}
+            onClick={() => setShowMarkerModal(true)}
           >
             Track a location
           </PulsatingButton>
